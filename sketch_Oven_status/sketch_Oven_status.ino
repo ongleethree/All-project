@@ -55,6 +55,9 @@ void loop() {
   Serial.printf("Ambient=%.3f ",Temp_ambient); 
   Serial.printf("object=%.3f ",Temp_object );
   Serial.println();
+  display.setCursor(10,30);
+  display.println("By cecilia");
   display.display();
+ 
   delay(500);
 }
