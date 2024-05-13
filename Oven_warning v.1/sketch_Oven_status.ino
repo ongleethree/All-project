@@ -11,8 +11,9 @@ Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 int motion_pin=2;
 int motion=0;
 int Green=4;
-int Red=0;
+int Red=15;
 int Relay_pin=5;
+int Buzzer_pin=16;
 Ticker Read_sensor;
 Ticker Display_RUNON;
 double Temp_ambient;
@@ -36,6 +37,7 @@ void setup() {
   display.println(Oven_status);
   pinMode(Red, OUTPUT);
   pinMode(Green, OUTPUT);
+  pinMode(Buzzer_pin, OUTPUT);
   Read_sensor.attach(1,read_oven_status);
   Display_RUNON.attach(1,Display_run);
   display.display();
@@ -56,27 +58,33 @@ void read_oven_status()
     Serial.println("oven status ON");
     Serial.println(motion);
     Serial.println("motion=ON");
+    tone(Buzzer_pin,554);
+    delay(1000);
+    noTone(Buzzer_pin);
     Serial.println("Motion detect object");
   }
-  else if(Temp_object<=30&&motion==0)
+  else if(Temp_object>=55&&motion==0)
   {
-    Oven_status=0;
+    Oven_status=1;
     digitalWrite(Green,LOW);
     digitalWrite(Red,HIGH);
-    Serial.println("oven status OFF");
+    Serial.println("oven status ON");
     Serial.println(motion);
     Serial.println("motion=OFF");
     Serial.println("Motion not detect object");
   }
-  if(Temp_object>=45&&motion==0)
+  if(Temp_object<=30&&motion==1)
   {
-    Oven_status=1;
-    digitalWrite(Red,HIGH);
-    digitalWrite(Green,LOW);
-    Serial.print("Oven ON");
+    Oven_status=0;
+    digitalWrite(Red,LOW);
+    digitalWrite(Green,HIGH);
+    Serial.println("Oven OFF");
     Serial.println(motion);
-    Serial.println("motion=OFF");
-    Serial.println("Motion not detect object");
+    Serial.println("motion=ON");
+    Serial.println("Motion detect object");
+    tone(Buzzer_pin,554);
+    delay(1000);
+    noTone(Buzzer_pin);
 
   }
   else
@@ -84,9 +92,9 @@ void read_oven_status()
     Oven_status=0;
     digitalWrite(Red,LOW);
     digitalWrite(Green,LOW);
-    Serial.print("Oven OFF");
+    Serial.println("Oven LOW");
     Serial.println(motion);
-    Serial.println("motion=OFF");
+    Serial.println("motion=LOW");
     Serial.println("Motion not detect object");
   }
 }
@@ -97,18 +105,34 @@ void Cut_out()
     digitalWrite(Relay_pin,LOW);
     Serial.println("Relay=OFF");
   }
-  else if(Temp_object<=30&&motion==0)
+  else if(Temp_object>=55&&motion==0)
   {
+    tone(Buzzer_pin,26);
+    delay(1000);
+    tone(Buzzer_pin,300);
+    delay(1000);
+    noTone(Buzzer_pin); 
+    delay(50000);
     digitalWrite(Relay_pin,HIGH);
     Serial.println("Relay=ON");
-    delay(50000);
+    Serial.println("turn off power");
   }
 
-  if(Temp_object>=45&&motion==0)
+  if(Temp_object<=30&&motion==0)
   {
+    delay(300000);
     digitalWrite(Relay_pin,HIGH);
     Serial.println("Relay=ON");
-    delay(300000);
+  }
+  else
+  {
+    Oven_status=0;
+    digitalWrite(Red,LOW);
+    digitalWrite(Green,LOW);
+    Serial.println("Oven LOW");
+    Serial.println(motion);
+    Serial.println("motion=LOW");
+    Serial.println("Motion not detect object");  
   }
 }
 void Display_run()
