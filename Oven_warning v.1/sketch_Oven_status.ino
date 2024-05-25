@@ -4,6 +4,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Ticker.h>
+#include<WiFi.h>
+#include <PubSubClient.h>
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
@@ -12,16 +14,45 @@ int motion_pin=2;
 int motion=0;
 int Green=4;
 int Red=15;
-int Relay_pin=5;
+int Relay_pin=25;
 int Buzzer_pin=16;
+char msg[100];
 Ticker Read_sensor;
 Ticker Display_RUNON;
 double Temp_ambient;
 double Temp_object;
 int Oven_status=0;   //0 is oven off,1 is oven on
+//...........Wifi setup................//
+const char* myssid = "BANONGLEE_2.4G";
+const char* mypassword = "WANVIM27";
+//.............Mqtt......................//
+const char* mqtt_server = "broker.netpie.io";
+const int mqtt_port = 1883;
+const char* mqtt_Client = "d1fac620-4ec6-41e6-bea5-7c84090dd0ee";
+const char* mqtt_username = "yPfcthAH5w8EWqxwUN3VECBaZkKNsDEn";
+const char* mqtt_password = "mJS9MiKcyC8x4f7TPNkWaS4kKStDKLCu";
+
+// ...anoucement the mqtt function...//
+WiFiClient espClient;
+PubSubClient client(espClient);
 void setup() {
   Serial.begin(9600);
-
+  //.....connect wifi.....//
+  Serial.print("Connecting to "); 
+  Serial.println(myssid);
+  WiFi.begin(myssid, mypassword);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  client.setServer(mqtt_server, mqtt_port);//ให้ทำการสร้างพอร์ต mqtt
+//.....connect wifi.....//
+ 
   Serial.println("Adafruit MLX90614 test");  
   pinMode(motion_pin,INPUT);
   pinMode(Relay_pin,OUTPUT);
@@ -148,8 +179,37 @@ void Display_run()
   display.display();
  
 }
+void reconnect() 
+{
+  while (!client.connected()) //! mean not
+  {
+    Serial.print("Sensor MQTT connection…");
+    if (client.connect(mqtt_Client, mqtt_username,mqtt_password)) 
+    {
+      Serial.println("connected");
+      client.subscribe("@msg/OUT1");
+    }
+    else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println("try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
 void loop() 
 
 {
-  Cut_out();
+  
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  String data = "{\"data\": {\"Temp_object\":" + String(Temp_object) +",\"Ambient\":" + String(Temp_ambient)+",\"Motion\":" + String(motion)+"}}";
+  Serial.println(data);
+  data.toCharArray(msg, (data.length() + 1));
+  client.publish("@shadow/data/update", msg);
+  delay(5000);
+  //Cut_out();
+
 }
