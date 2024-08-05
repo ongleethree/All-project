@@ -22,8 +22,8 @@ char msg[100];
 Adafruit_SSD1306 display(OLED_RESET);
 // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 //...........Wifi setup................//
-const char* myssid = "BANONGLEE_2.4G";
-const char* mypassword = "WANVIM27";
+const char* myssid = "vivo V27";
+const char* mypassword = "ely123456789";
 //.............Mqtt......................//
 const char* mqtt_server = "broker.netpie.io";
 const int mqtt_port = 1883;
@@ -106,7 +106,7 @@ void read_sensor_soil()
   display.println(sensorValue,0);
   display.display();
 
-  if(sensorValue<=1200)
+  if(sensorValue<=1400)
   {
     //display.clearDisplay();
     //display.setCursor(20,20);
@@ -118,7 +118,7 @@ void read_sensor_soil()
 
       start_tone=1;
   }
-  else if(sensorValue<=1500&&sensorValue>1300)
+  else if(sensorValue>=1800&&sensorValue<=2000)
   {
     //display.clearDisplay();
     //display.setCursor(20,20);
