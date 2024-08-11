@@ -1,9 +1,14 @@
 #include <DHT.h>
 #define DHTPIN 4 
 #define DHTTYPE DHT11 
+#include <WiFi.h>
+#include <PubSubClient.h>
 
-int voc=2;
+void read_sensor();
+void sent_mqtt_data();
+int voc=35;
 int reading;
+char msg[100];
 int relay=19;
 int buzzer_pin=18;
 int red=16;
@@ -12,6 +17,21 @@ int yellow=5;
 
 DHT dht(DHTPIN, DHTTYPE);
 
+float t,h,f;
+
+//...........Wifi setup................//
+const char* myssid = "BANONGLEE_2.4G";
+const char* mypassword = "WANVIM27";
+//.............Mqtt......................//
+const char* mqtt_server = "broker.netpie.io";
+const int mqtt_port = 1883;
+const char* mqtt_Client = "87d1f414-2bcc-48b9-beec-51ef807a0f25";
+const char* mqtt_username = "enB4p8ZW2oqB5AKjfCNtDvi291mWt3s9";
+const char* mqtt_password = "i7kUnuf2HMYuZTs9u7i7QHtzXLaRqDJE";
+
+// ...anoucement the mqtt function...//
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 void setup() 
 {
@@ -26,8 +46,42 @@ void setup()
   pinMode(green,OUTPUT);
   pinMode(yellow,OUTPUT);
   dht.begin();
+
+  //.....connect wifi.....//
+  Serial.print("Connecting to "); 
+  Serial.println(myssid);
+  WiFi.begin(myssid, mypassword);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  client.setServer(mqtt_server, mqtt_port);//ให้ทำการสร้างพอร์ต mqtt
+//.....connect wifi.....//
 }
-// ...........Wifi setuup.............
+
+void reconnect() 
+{
+  while (!client.connected()) //! mean not
+  {
+    Serial.print("Sensor MQTT connection…");
+    if (client.connect(mqtt_Client, mqtt_username,mqtt_password)) 
+    {
+      Serial.println("connected");
+      client.subscribe("@msg/OUT1");
+    }
+    else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println("try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
 
 
 
@@ -36,26 +90,22 @@ void setup()
 
 
 
-
-
-
-// ...........Wifi setuup.............
 
 void loop() 
 {
-
+  
   reading = analogRead(voc);
   Serial.println("gas=");
-  Serial.println(voc);
+  Serial.println(reading);
   
   delay(2000);  
 
   // Reading temperature and humidity
-  float h = dht.readHumidity();
+   h = dht.readHumidity();
   // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
+   t = dht.readTemperature();
   // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
+   f = dht.readTemperature(true);
 
    if(t>90&&h>=40)
    {
@@ -107,6 +157,8 @@ void loop()
   if (isnan(h) || isnan(t) || isnan(f)) {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
+
+    
   }
 
   // Compute heat index in Celsius (the default)
@@ -125,16 +177,16 @@ void loop()
   Serial.print(fHeatIndex);
   Serial.println(F("°F"));
   read_sensor() ;
-
+  sent_mqtt_data();
 }
 void read_sensor()
 {
-  if(voc>=50)
+  if(reading>=1500)
   {
    Serial.print("gas C02 HIGH");
    digitalWrite(relay,HIGH);
   }
-  else if(voc>=40)
+  else if(reading<=900)
   {
     Serial.print("gas C02 Meduim");
     digitalWrite(relay,LOW);
@@ -146,3 +198,16 @@ void read_sensor()
   } 
 }
 
+
+void sent_mqtt_data()
+{
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  String data = "{\"data\": {\"Temperature\":" + String(t) +",\"Huminity\":" + String(h)+",\"gas_raw_ADC\":" + String(reading)+"}}";
+  Serial.println(data);
+  data.toCharArray(msg, (data.length() + 1));
+  client.publish("@shadow/data/update", msg);
+  delay(5000);
+}
