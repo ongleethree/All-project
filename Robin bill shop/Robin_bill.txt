@@ -1,0 +1,40 @@
+Costumer name = Nana
+Date = 11/9/2024
+____________________ ROBIN MANU ____________________
+
+       *****MANU*****       
+
+1. Robin backpack cost = 20 dollar
+
+2. Robin T-shirt cost = 100 dollar
+
+3. Robin Earphone cost = 150 dollar
+
+4. Robin pen cost = 10 dollar
+
+5. Robin smart watch = 90 dollar
+
+___________________________
+
+Welcome To Robin love Nana shop
+
+___________________________
+
+stuff name = T-shirt	
+price = 100	
+Amount of stuff = 1	
+stuff name = pen	
+price = 10	
+Amount of stuff = 2	
+______________________________________________________
+
+Total price = 120
+
+______________________________________________________
+
+___________________________
+
+Thank you for visiting Robin love Nana shop
+
+___________________________
+
